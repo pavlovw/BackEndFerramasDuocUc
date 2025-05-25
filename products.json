@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "nombre": "Martillo",
+    "precio": 3500,
+    "stock": 10,
+    "imagen": "seguridad.png",
+    "categoria": "Herra - Manuales"
+  },
+  {
+    "id": 2,
+    "nombre": "Clavos",
+    "precio": 800,
+    "stock": 100,
+    "imagen": "seguridad.png",
+    "categoria": "Materiales Básicos"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1747611763275,
+    "nombre": "Pablo Vargas",
+    "usuario": "pavlovw",
+    "correo": "pablo@duocuc.cl",
+    "password": "$2b$10$jpMMOkm2nqzjf2VxwzVj5eNhhPWcp4v9Xc0AC2SGPs4o8j9flQoqC",
+    "telefono": "90433128"
+  },
+  {
+    "id": 1747611946955,
+    "nombre": "Pablo Vargas",
+    "usuario": "pavlovww",
+    "correo": "pabloo@duocuc.cl",
+    "password": "$2b$10$5bdsJbRu9BOmDyebLVgQq.w5SZUWeNliMCOky5qNdDS84YnPmFK/a",
+    "telefono": "90433128"
+  },
+  {
+    "id": 1747612265405,
+    "nombre": "Pablo Vargas",
+    "usuario": "pavlovv",
+    "correo": "pablovw@duocuc.cl",
+    "password": "$2b$10$lRp3kZ6G/cnJQrN8uWpe/eT8hD9WnKnDJRwF7cXXikXfN.Zsqx5n6",
+    "telefono": "90433128"
+  }
+]
