@@ -56,57 +56,73 @@ router.post('/iniciar', (req, res) => {
 });
 
 // Confirmar transacción (callback)
-router.post('/respuesta', (req, res) => {
-  const { token_ws } = req.body;
+router.get('/respuesta', (req, res) => {
+  const { token_ws } = req.query;
+
+  if (!token_ws) {
+    return res.status(400).send('Token no proporcionado');
+  }
 
   webpay.commit(token_ws)
     .then(result => {
-      // Obtener orden_id del pago según token_ws
-      db.query('SELECT orden_id FROM pagos WHERE token_transaccion = ?', [token_ws], (err, results) => {
-        if (err) {
-          console.error('Error consultando pago:', err);
-          return res.status(500).json({ error: 'Error en la base de datos' });
-        }
+      const estado = result.status || 'FAILED';
 
-        if (results.length === 0) {
-          return res.status(404).json({ error: 'Pago no encontrado' });
+      // Obtener orden_id desde el token
+      db.query('SELECT orden_id FROM pagos WHERE token_transaccion = ?', [token_ws], (err, results) => {
+        if (err || results.length === 0) {
+          return res.redirect(`http://localhost:5173/webpay-respuesta?estado=FAILED&orden=0`);
         }
 
         const ordenId = results[0].orden_id;
 
-        // Actualizar estado según resultado de transacción
-        if (result.status === 'AUTHORIZED') {
-          db.query('UPDATE ordenes SET estado = ? WHERE id = ?', ['pagado', ordenId], (err) => {
-            if (err) console.error('Error actualizando orden:', err);
-          });
+        // Actualizar estado en BD
+        const estadoPago = estado === 'AUTHORIZED' ? 'exitoso' : 'fallido';
+        const estadoOrden = estado === 'AUTHORIZED' ? 'pagado' : 'cancelado';
 
-          db.query(
-            'UPDATE pagos SET estado_pago = ?, respuesta = ? WHERE token_transaccion = ?',
-            ['exitoso', JSON.stringify(result), token_ws],
-            (err) => {
-              if (err) console.error('Error actualizando pago:', err);
-            }
-          );
-        } else {
-          db.query('UPDATE ordenes SET estado = ? WHERE id = ?', ['cancelado', ordenId], (err) => {
-            if (err) console.error('Error actualizando orden:', err);
-          });
+        db.query('UPDATE ordenes SET estado = ? WHERE id = ?', [estadoOrden, ordenId]);
+        db.query('UPDATE pagos SET estado_pago = ?, respuesta = ? WHERE token_transaccion = ?', [estadoPago, JSON.stringify(result), token_ws]);
 
-          db.query(
-            'UPDATE pagos SET estado_pago = ?, respuesta = ? WHERE token_transaccion = ?',
-            ['fallido', JSON.stringify(result), token_ws],
-            (err) => {
-              if (err) console.error('Error actualizando pago:', err);
-            }
-          );
-        }
-
-        res.redirect(`http://localhost:5173/webpay-respuesta?estado=${result.status}&orden=${ordenId}`);
+        // Redirigir al frontend con resultado
+        res.redirect(`http://localhost:5173/webpay-respuesta?estado=${estado}&orden=${ordenId}`);
       });
     })
     .catch(err => {
-      console.error('Error al confirmar pago:', err);
-      res.status(500).json({ error: 'Error al confirmar transacción' });
+      console.error('Error al confirmar token GET:', err);
+      res.redirect(`http://localhost:5173/webpay-respuesta?estado=FAILED&orden=0`);
+    });
+});
+
+router.get('/respuesta', (req, res) => {
+  const { token_ws } = req.query;
+
+  if (!token_ws) {
+    return res.status(400).send('Token no proporcionado (GET)');
+  }
+
+  // Procesar commit igual que en POST
+  webpay.commit(token_ws)
+    .then(result => {
+      const estado = result.status || 'FAILED';
+
+      db.query('SELECT orden_id FROM pagos WHERE token_transaccion = ?', [token_ws], (err, results) => {
+        if (err || results.length === 0) {
+          return res.redirect(`http://localhost:5173/webpay-respuesta?estado=FAILED&orden=0`);
+        }
+
+        const ordenId = results[0].orden_id;
+
+        const estadoPago = estado === 'AUTHORIZED' ? 'exitoso' : 'fallido';
+        const estadoOrden = estado === 'AUTHORIZED' ? 'pagado' : 'cancelado';
+
+        db.query('UPDATE ordenes SET estado = ? WHERE id = ?', [estadoOrden, ordenId]);
+        db.query('UPDATE pagos SET estado_pago = ?, respuesta = ? WHERE token_transaccion = ?', [estadoPago, JSON.stringify(result), token_ws]);
+
+        res.redirect(`http://localhost:5173/webpay-respuesta?estado=${estado}&orden=${ordenId}`);
+      });
+    })
+    .catch(err => {
+      console.error('Error al confirmar GET:', err);
+      res.redirect('http://localhost:5173/webpay-respuesta?estado=FAILED&orden=0');
     });
 });
 
